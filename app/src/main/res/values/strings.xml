@@ -2,6 +2,8 @@
     <string name="app_name">Shopping List Kotlin</string>
 
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
+    <string name="shopping_list_fragment_label">Shopping List</string>
+
+    <string name="item_product_amount">%1$dX</string>
+    <string name="item_product_name" />
 </resources>
