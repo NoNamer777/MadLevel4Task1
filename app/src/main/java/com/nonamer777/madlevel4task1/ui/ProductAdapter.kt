@@ -14,9 +14,8 @@ class ProductAdapter(private val products: List<Product>):
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
         fun dataBind(product: Product) {
-            itemView.txtProductAmount.text =
-                String.format(R.string.item_product_amount.toString(), product.amount)
-
+            itemView.txtProductAmount.text = String.format("%dX", product.amount)
+            itemView.txtProductName.text = product.name
         }
     }
 
