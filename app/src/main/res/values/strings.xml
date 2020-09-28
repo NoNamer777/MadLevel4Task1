@@ -4,6 +4,9 @@
     <!-- Strings used for fragments for navigation -->
     <string name="shopping_list_fragment_label">Shopping List</string>
 
-    <string name="item_product_amount">%1$dX</string>
     <string name="item_product_name" />
+    <string name="add_product_dialog_title">Add a product to your list</string>
+    <string name="placeholder_add_product">Product Name</string>
+    <string name="placeholder_product_amount">Amount</string>
+    <string name="btn_add_product">OK</string>
 </resources>
