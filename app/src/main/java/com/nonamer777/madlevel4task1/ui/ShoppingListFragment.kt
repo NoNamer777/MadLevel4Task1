@@ -1,9 +1,16 @@
 package com.nonamer777.madlevel4task1.ui
 
+import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.os.Bundle
+import android.text.Editable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.Toast
+import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -11,7 +18,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nonamer777.madlevel4task1.R
 import com.nonamer777.madlevel4task1.model.Product
+import com.nonamer777.madlevel4task1.repository.ProductRepository
+import kotlinx.android.synthetic.main.add_product_dialog.*
 import kotlinx.android.synthetic.main.fragment_shopping_list.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A simple [Fragment] subclass that shows the shopping list with the product types and amount of items.
@@ -19,7 +32,12 @@ import kotlinx.android.synthetic.main.fragment_shopping_list.*
 class ShoppingListFragment : Fragment() {
 
     private val products = arrayListOf<Product>()
+
     private val productAdapter = ProductAdapter(products)
+
+    private lateinit var productRepository: ProductRepository
+
+    private val mainScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -31,6 +49,16 @@ class ShoppingListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        productRepository = ProductRepository(requireContext())
+
+        getProductsFromDatabase()
+        initializeRecyclerView()
+
+        fabAddItem.setOnClickListener { showProductDialog() }
+    }
+
+    /** Initializes the Recycler View */
+    private fun initializeRecyclerView() {
         // Sets up the recycler view.
         rvShoppingList.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         rvShoppingList.adapter = productAdapter
@@ -52,12 +80,70 @@ class ShoppingListFragment : Fragment() {
 
             // Removes a product when it gets swiped LEFT.
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
+                val product = products[viewHolder.adapterPosition]
 
-                products.removeAt(position)
-                productAdapter.notifyDataSetChanged()
+                mainScope.launch {
+                    withContext(Dispatchers.IO) { productRepository.deleteProduct(product) }
+
+                    getProductsFromDatabase()
+                }
             }
         }
         return ItemTouchHelper(callback)
     }
+
+    private fun getProductsFromDatabase() {
+        mainScope.launch {
+            val products = withContext(Dispatchers.IO) { productRepository.getAllProducts() }
+
+            this@ShoppingListFragment.products.clear()
+            this@ShoppingListFragment.products.addAll(products)
+            
+            this@ShoppingListFragment.productAdapter.notifyDataSetChanged()
+        }
+    }
+
+    @SuppressLint("InflateParams")
+    private fun showProductDialog() {
+        val builder = AlertDialog.Builder(requireContext())
+
+        builder.setTitle(getString(R.string.add_product_dialog_title))
+
+        val dialogLayout = layoutInflater.inflate(R.layout.add_product_dialog, null)
+        val productName = dialogLayout.findViewById<EditText>(R.id.inputProductName)
+        val amount = dialogLayout.findViewById<EditText>(R.id.inputProductAmount)
+
+        builder.setView(dialogLayout)
+
+        builder.setPositiveButton(R.string.btn_add_product) { _: DialogInterface, _: Int ->
+            addProduct(productName, amount)
+        }
+        builder.show()
+    }
+
+    private fun addProduct(inputProductName: EditText, inputProductAmount: EditText) {
+
+        if (validateFields(inputProductName, inputProductAmount)) {
+            mainScope.launch {
+                val product = Product(
+                    null,
+                    inputProductName.text.toString(),
+                    inputProductAmount.text.toString().toInt()
+                )
+
+                withContext(Dispatchers.IO) { productRepository.saveProduct(product) }
+
+                getProductsFromDatabase()
+            }
+        } else {
+            Toast.makeText(
+                activity,
+                "Please fill in the input fields",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun validateFields(inputProductName: EditText, inputProductAmount: EditText): Boolean =
+        inputProductName.text.toString().isNotBlank() && inputProductAmount.text.toString().isNotBlank()
 }
