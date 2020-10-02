@@ -40,11 +40,11 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="24dp"
-        android:backgroundTint="#FF0000"
         android:clickable="true"
         android:focusable="true"
         android:src="@android:drawable/ic_menu_delete"
         android:tint="#FFFFFF"
+        app:backgroundTint="#FF0000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fabAddItem" />

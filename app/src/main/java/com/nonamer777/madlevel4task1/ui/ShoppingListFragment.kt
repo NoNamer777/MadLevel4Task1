@@ -55,6 +55,7 @@ class ShoppingListFragment : Fragment() {
         initializeRecyclerView()
 
         fabAddItem.setOnClickListener { showProductDialog() }
+        fabClearList.setOnClickListener { removeAllProducts() }
     }
 
     /** Initializes the Recycler View */
@@ -92,6 +93,7 @@ class ShoppingListFragment : Fragment() {
         return ItemTouchHelper(callback)
     }
 
+    /** Requests all Products from the database. */
     private fun getProductsFromDatabase() {
         mainScope.launch {
             val products = withContext(Dispatchers.IO) { productRepository.getAllProducts() }
@@ -103,16 +105,15 @@ class ShoppingListFragment : Fragment() {
         }
     }
 
+    /** Shows an Dialog to fill in the name and amount of the to be added Product. */
     @SuppressLint("InflateParams")
     private fun showProductDialog() {
         val builder = AlertDialog.Builder(requireContext())
-
-        builder.setTitle(getString(R.string.add_product_dialog_title))
-
         val dialogLayout = layoutInflater.inflate(R.layout.add_product_dialog, null)
         val productName = dialogLayout.findViewById<EditText>(R.id.inputProductName)
         val amount = dialogLayout.findViewById<EditText>(R.id.inputProductAmount)
 
+        builder.setTitle(getString(R.string.add_product_dialog_title))
         builder.setView(dialogLayout)
 
         builder.setPositiveButton(R.string.btn_add_product) { _: DialogInterface, _: Int ->
@@ -121,8 +122,10 @@ class ShoppingListFragment : Fragment() {
         builder.show()
     }
 
+    /** Requests a new product of a certain amount to be added to the database. */
     private fun addProduct(inputProductName: EditText, inputProductAmount: EditText) {
 
+        // Only add the products if both fields are filled in.
         if (validateFields(inputProductName, inputProductAmount)) {
             mainScope.launch {
                 val product = Product(
@@ -144,6 +147,16 @@ class ShoppingListFragment : Fragment() {
         }
     }
 
+    /** Checks if the provided input fields are not empty. */
     private fun validateFields(inputProductName: EditText, inputProductAmount: EditText): Boolean =
         inputProductName.text.toString().isNotBlank() && inputProductAmount.text.toString().isNotBlank()
+
+    /** Requests all products to be removed from the database. */
+    private fun removeAllProducts() {
+        mainScope.launch {
+            withContext(Dispatchers.IO) { productRepository.deleteAllProducts() }
+
+            getProductsFromDatabase()
+        }
+    }
 }
